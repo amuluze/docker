@@ -6,6 +6,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"strings"
@@ -33,7 +34,7 @@ func (m *Manager) ListNetwork(ctx context.Context) ([]NetworkSummary, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	var networkList []NetworkSummary
 	for _, net := range nets {
 		containers := make(map[string]string)
@@ -75,6 +76,28 @@ func (m *Manager) CreateNetwork(ctx context.Context, name, driver, subnet, gatew
 		Attachable: true,
 	})
 	return nt.ID, err
+}
+
+func (m *Manager) GetNetworkByName(ctx context.Context, name string) (*NetworkSummary, error) {
+	networks, err := m.ListNetwork(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, nt := range networks {
+		if nt.Name == name {
+			return &NetworkSummary{
+				ID:         nt.ID,
+				Name:       nt.Name,
+				Driver:     nt.Driver,
+				Scope:      nt.Scope,
+				Created:    nt.Created,
+				Containers: nt.Containers,
+				Labels:     nt.Labels,
+				SubNet:     nt.SubNet,
+			}, nil
+		}
+	}
+	return nil, fmt.Errorf("nt %s not found", name)
 }
 
 func (m *Manager) GetNetworkByID(ctx context.Context, networkID string) (*NetworkSummary, error) {

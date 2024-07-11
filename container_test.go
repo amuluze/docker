@@ -24,7 +24,7 @@ func TestContainerCreate(t *testing.T) {
 		"test",
 		"nginx:latest",
 		"test",
-		[]string{"8088:8088"},
+		[]string{"80:80"},
 		[]string{"/Users/amu/Desktop/common.scss:/app/common.scss:rw"},
 		map[string]string{AmprobeLabel: "true"},
 	)
@@ -70,7 +70,7 @@ func TestContainerStart(t *testing.T) {
 
 func TestContainerStop(t *testing.T) {
 	manager, _ := NewManager()
-	err := manager.StopContainer(context.Background(), "5c28bf6e16be")
+	err := manager.StopContainer(context.Background(), "eedaf881e6c8")
 	if err != nil {
 		t.Error("stop container error: ", err)
 	}
@@ -78,7 +78,7 @@ func TestContainerStop(t *testing.T) {
 
 func TestContainerDelete(t *testing.T) {
 	manager, _ := NewManager()
-	err := manager.DeleteContainer(context.Background(), "5c28bf6e16be")
+	err := manager.DeleteContainer(context.Background(), "eedaf881e6c8")
 	if err != nil {
 		t.Error("delete container error: ", err)
 	}

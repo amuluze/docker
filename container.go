@@ -7,12 +7,13 @@ package docker
 import (
 	"context"
 	"fmt"
-
+	"github.com/docker/docker/api/types/network"
+	
 	"io"
 	"os"
 	"strings"
 	"time"
-
+	
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/libcompose/yaml"
@@ -50,14 +51,14 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	var containerSummaryList []ContainerSummary
 	for _, c := range containers {
 		var uptime string
 		if c.State == "running" {
 			uptime = m.getUptime(ctx, c.ID)
 		}
-
+		
 		var ip string
 		for _, nt := range c.NetworkSettings.Networks {
 			if nt.IPAddress != "" {
@@ -65,7 +66,7 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 				break
 			}
 		}
-
+		
 		state := c.State
 		inspect, err := m.client.ContainerInspect(ctx, c.ID)
 		if err == nil {
@@ -73,7 +74,7 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 				state = "running"
 			}
 		}
-
+		
 		cs := ContainerSummary{
 			ID:      c.ID,
 			Name:    strings.Trim(c.Names[0], "/"),
@@ -95,13 +96,22 @@ func (m *Manager) CreateContainer(ctx context.Context, containerName, imageName,
 	config.Image = imageName
 	config.Labels = labels
 	config.Tty = true
-
+	
 	hostConfig := &container.HostConfig{}
 	hostConfig.RestartPolicy = container.RestartPolicy{Name: "always"}
 	hostConfig.PortBindings = make(nat.PortMap)
-
-	// TODO:这里需要增加 networkConfig
-
+	
+	nt, err := m.GetNetworkByName(ctx, networkName)
+	if err != nil {
+		return "", err
+	}
+	hostConfig.NetworkMode = container.NetworkMode(networkName)
+	networkConfig := &network.NetworkingConfig{}
+	networkConfig.EndpointsConfig = make(map[string]*network.EndpointSettings)
+	networkConfig.EndpointsConfig[networkName] = &network.EndpointSettings{
+		NetworkID: nt.ID,
+	}
+	
 	for _, port := range ports {
 		portsMapping, err := nat.ParsePortSpec(port)
 		if err != nil {
@@ -122,16 +132,16 @@ func (m *Manager) CreateContainer(ctx context.Context, containerName, imageName,
 			})
 		}
 	}
-
+	
 	config.ExposedPorts = make(nat.PortSet)
 	for port := range hostConfig.PortBindings {
 		config.ExposedPorts[port] = struct{}{}
 	}
-
+	
 	for _, vol := range vols {
 		vol := "- " + vol
 		volumes := &yaml.Volumes{}
-
+		
 		err := goyaml.Unmarshal([]byte(vol), volumes)
 		if err != nil {
 			return "", err
@@ -144,7 +154,7 @@ func (m *Manager) CreateContainer(ctx context.Context, containerName, imageName,
 			hostConfig.Binds = append(hostConfig.Binds, volString)
 		}
 	}
-
+	
 	createResponse, err := m.client.ContainerCreate(ctx, config, hostConfig, nil, nil, containerName)
 	if err != nil {
 		return "", err
@@ -152,8 +162,12 @@ func (m *Manager) CreateContainer(ctx context.Context, containerName, imageName,
 	for _, w := range createResponse.Warnings {
 		fmt.Printf("Container Create Warning: %s\n", w)
 	}
-	if err := m.JoinNetwork(ctx, createResponse.ID, networkName); err != nil {
-		return "", nil
+	if err := m.client.NetworkConnect(ctx, nt.ID, createResponse.ID, nil); err != nil {
+		return "", err
+	}
+	
+	if err := m.client.ContainerStart(ctx, createResponse.ID, container.StartOptions{}); err != nil {
+		return "", err
 	}
 	return createResponse.ID, nil
 }
@@ -210,7 +224,7 @@ func (m *Manager) GetContainerCpu(ctx context.Context, containerID string) (floa
 	if err != nil {
 		return 0.0, err
 	}
-
+	
 	cpuDelta := gjson.Get(string(body), "cpu_stats.cpu_usage.total_usage").Float() - gjson.Get(string(body), "precpu_stats.cpu_usage.total_usage").Float()
 	systemDelta := gjson.Get(string(body), "cpu_stats.system_cpu_usage").Float() - gjson.Get(string(body), "precpu_stats.system_cpu_usage").Float()
 	cpuPercent := (cpuDelta / systemDelta) * 100.0
