@@ -67,6 +67,19 @@ func (m *Manager) ListNetwork(ctx context.Context) ([]NetworkSummary, error) {
 	return networkList, nil
 }
 
+func (m *Manager) HasSameNameNetwork(ctx context.Context, networkName string) (bool, error) {
+	nets, err := m.client.NetworkList(ctx, network.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+	for _, net := range nets {
+		if net.Name == networkName {
+			return true, nil
+		}
+	}
+	return false, err
+}
+
 func (m *Manager) CreateNetwork(ctx context.Context, name, driver, subnet, gateway string, labels map[string]string) (string, error) {
 	nt, err := m.client.NetworkCreate(ctx, name, network.CreateOptions{
 		Driver:     driver,

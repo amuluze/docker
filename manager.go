@@ -27,6 +27,7 @@ type IManager interface {
 	Version(context.Context) (*Version, error)
 
 	ListContainer(ctx context.Context) ([]ContainerSummary, error)
+	HasSameNameContainer(ctx context.Context, containerName string) (bool, error)
 	CreateContainer(ctx context.Context, containerName, imageName, networkName string, ports []string, vols []string, labels map[string]string) (string, error)
 	StartContainer(ctx context.Context, containerID string) error
 	StopContainer(ctx context.Context, containerID string) error
@@ -51,6 +52,7 @@ type IManager interface {
 	GetImageByID(ctx context.Context, imageID string) (*ImageSummary, error)
 
 	ListNetwork(ctx context.Context) ([]NetworkSummary, error)
+	HasSameNameNetwork(ctx context.Context, networkName string) (bool, error)
 	CreateNetwork(ctx context.Context, name, driver, subnet, gateway string, labels map[string]string) (string, error)
 	GetNetworkByID(ctx context.Context, networkID string) (*NetworkSummary, error)
 	DeleteNetwork(ctx context.Context, networkID string) error
