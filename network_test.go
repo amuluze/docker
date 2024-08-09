@@ -19,7 +19,7 @@ func TestListNetwork(t *testing.T) {
 
 func TestCreateNetwork(t *testing.T) {
 	manager, _ := NewManager()
-	networkID, err := manager.CreateNetwork(context.Background(), "test", "bridge", "172.20.0.0/24", "172.20.0.1", map[string]string{AmprobeLabel: "true"})
+	networkID, err := manager.CreateNetwork(context.Background(), "test", "bridge", "172.20.0.0/24", "172.20.0.1", map[string]string{CreatedByProbe: "true"})
 	if err != nil {
 		t.Fatalf("create network failed: %v\n", err)
 	}

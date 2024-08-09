@@ -5,5 +5,13 @@
 package docker
 
 const (
-	AmprobeLabel = "amprobe.manual"
+	ServerTypeLabel = "server.type"
+	CreatedByProbe  = "created.by.probe"
+)
+
+const (
+	WebServer      = "web"
+	HttpServer     = "http"
+	DatabaseServer = "database"
+	UnknownServer  = "unknown"
 )

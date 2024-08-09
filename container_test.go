@@ -13,7 +13,7 @@ func TestListContainer(t *testing.T) {
 	manager, _ := NewManager()
 	containers, _ := manager.ListContainer(context.Background())
 	for _, c := range containers {
-		t.Errorf("container: %#v\n", c)
+		t.Logf("container name: %s, container ports: %#v, container labels: %#v\n", c.Name, c.Ports, c.Labels)
 	}
 }
 
@@ -24,9 +24,10 @@ func TestContainerCreate(t *testing.T) {
 		"test",
 		"nginx:latest",
 		"test",
-		[]string{"80:80"},
+		[]string{"18080:80"},
 		[]string{"/Users/amu/Desktop/common.scss:/app/common.scss:rw"},
-		map[string]string{AmprobeLabel: "true"},
+		[]string{},
+		map[string]string{CreatedByProbe: "true", ServerTypeLabel: WebServer},
 	)
 	if err != nil {
 		t.Error("create container error: ", err)

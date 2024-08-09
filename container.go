@@ -29,6 +29,7 @@ type ContainerSummary struct {
 	Created string            `json:"created"` // create time
 	Uptime  string            `json:"uptime"`  // uptime in seconds
 	IP      string            `json:"ip"`      // ip
+	Ports   []uint16          `json:"ports"`
 	Labels  map[string]string `json:"labels"`
 }
 
@@ -54,6 +55,10 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 
 	var containerSummaryList []ContainerSummary
 	for _, c := range containers {
+		var ports []uint16
+		for _, port := range c.Ports {
+			ports = append(ports, port.PublicPort)
+		}
 		var uptime string
 		if c.State == "running" {
 			uptime = m.getUptime(ctx, c.ID)
@@ -83,6 +88,7 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 			Created: time.Unix(c.Created, 0).Format("2006-01-02 15:04:05"),
 			Uptime:  uptime,
 			IP:      ip,
+			Ports:   ports,
 			Labels:  c.Labels,
 		}
 		containerSummaryList = append(containerSummaryList, cs)
