@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/api/types/network"
+	"strconv"
 
 	"io"
 	"os"
@@ -22,15 +23,18 @@ import (
 )
 
 type ContainerSummary struct {
-	ID      string            `json:"id"`      // ID
-	Name    string            `json:"name"`    // Name
-	Image   string            `json:"image"`   // Image
-	State   string            `json:"state"`   // State: created running paused restarting removing exited dead
-	Created string            `json:"created"` // create time
-	Uptime  string            `json:"uptime"`  // uptime in seconds
-	IP      string            `json:"ip"`      // ip
-	Ports   []uint16          `json:"ports"`
-	Labels  map[string]string `json:"labels"`
+	ID           string            `json:"id"`      // ID
+	Name         string            `json:"name"`    // Name
+	Image        string            `json:"image"`   // Image
+	Network      string            `json:"network"` // Network
+	State        string            `json:"state"`   // State: created running paused restarting removing exited dead
+	Created      string            `json:"created"` // create time
+	Uptime       string            `json:"uptime"`  // uptime in seconds
+	IP           string            `json:"ip"`      // ip
+	Ports        []string          `json:"ports"`
+	Volumes      []string          `json:"volumes"`
+	Environments []string          `json:"environments"`
+	Labels       map[string]string `json:"labels"`
 }
 
 type PortMapping struct {
@@ -55,9 +59,9 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 
 	var containerSummaryList []ContainerSummary
 	for _, c := range containers {
-		var ports []uint16
+		var ports []string
 		for _, port := range c.Ports {
-			ports = append(ports, port.PublicPort)
+			ports = append(ports, strconv.Itoa(int(port.PublicPort)))
 		}
 		var uptime string
 		if c.State == "running" {
@@ -65,9 +69,11 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 		}
 
 		var ip string
-		for _, nt := range c.NetworkSettings.Networks {
+		var networkName string
+		for ntName, nt := range c.NetworkSettings.Networks {
 			if nt.IPAddress != "" {
 				ip = nt.IPAddress
+				networkName = ntName
 				break
 			}
 		}
@@ -80,16 +86,32 @@ func (m *Manager) ListContainer(ctx context.Context) ([]ContainerSummary, error)
 			}
 		}
 
+		var volumes []string
+		for _, mount := range c.Mounts {
+			if mount.Driver != "" {
+				volumes = append(volumes, fmt.Sprintf("%s:%s:%s", mount.Source, mount.Destination, mount.Driver))
+			} else {
+				volumes = append(volumes, fmt.Sprintf("%s:%s", mount.Source, mount.Destination))
+			}
+		}
+
+		var environments []string
+		inspect, _ = m.client.ContainerInspect(ctx, c.ID)
+		environments = inspect.Config.Env
+
 		cs := ContainerSummary{
-			ID:      c.ID,
-			Name:    strings.Trim(c.Names[0], "/"),
-			Image:   c.Image,
-			State:   state,
-			Created: time.Unix(c.Created, 0).Format("2006-01-02 15:04:05"),
-			Uptime:  uptime,
-			IP:      ip,
-			Ports:   ports,
-			Labels:  c.Labels,
+			ID:           c.ID,
+			Name:         strings.Trim(c.Names[0], "/"),
+			Image:        c.Image,
+			Network:      networkName,
+			State:        state,
+			Created:      time.Unix(c.Created, 0).Format("2006-01-02 15:04:05"),
+			Uptime:       uptime,
+			IP:           ip,
+			Ports:        ports,
+			Volumes:      volumes,
+			Environments: environments,
+			Labels:       c.Labels,
 		}
 		containerSummaryList = append(containerSummaryList, cs)
 	}

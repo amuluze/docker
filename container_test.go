@@ -13,7 +13,7 @@ func TestListContainer(t *testing.T) {
 	manager, _ := NewManager()
 	containers, _ := manager.ListContainer(context.Background())
 	for _, c := range containers {
-		t.Logf("container name: %s, container ports: %#v, container labels: %#v\n", c.Name, c.Ports, c.Labels)
+		t.Logf("container name: %s, container ports: %#v, container labels: %#v, container network: %#v\n", c.Name, c.Ports, c.Labels, c.Network)
 	}
 }
 
