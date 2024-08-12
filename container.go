@@ -297,3 +297,11 @@ func (m *Manager) ContainerLogs(ctx context.Context, containerID string) (io.Rea
 func (m *Manager) RenameContainer(ctx context.Context, containerID, newName string) error {
 	return m.client.ContainerRename(ctx, containerID, newName)
 }
+
+func (m *Manager) ContainerExists(ctx context.Context, containerID string) (bool, error) {
+	_, err := m.client.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}

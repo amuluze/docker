@@ -84,3 +84,13 @@ func TestContainerDelete(t *testing.T) {
 		t.Error("delete container error: ", err)
 	}
 }
+
+func TestContainerExists(t *testing.T) {
+	manager, _ := NewManager()
+	exists, err := manager.ContainerExists(context.Background(), "e79ceb874917")
+	if err != nil {
+		t.Error("container exists error: ", err)
+		return
+	}
+	t.Log(exists)
+}
