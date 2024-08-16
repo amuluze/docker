@@ -28,7 +28,7 @@ type IManager interface {
 
 	ListContainer(ctx context.Context) ([]ContainerSummary, error)
 	HasSameNameContainer(ctx context.Context, containerName string) (bool, error)
-	CreateContainer(ctx context.Context, containerName, imageName, networkName string, ports []string, vols []string, env []string, labels map[string]string) (string, error)
+	CreateContainer(ctx context.Context, containerName, imageName, networkName string, ports []string, vols []string, env []string, commands []string, labels map[string]string) (string, error)
 	StartContainer(ctx context.Context, containerID string) error
 	StopContainer(ctx context.Context, containerID string) error
 	RestartContainer(ctx context.Context, containerID string) error

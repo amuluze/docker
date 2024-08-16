@@ -21,12 +21,13 @@ func TestContainerCreate(t *testing.T) {
 	manager, _ := NewManager()
 	cid, err := manager.CreateContainer(
 		context.Background(),
+		"redis",
+		"redis:7.0.5",
 		"test",
-		"nginx:latest",
-		"test",
-		[]string{"18080:80"},
+		[]string{"6379:6379"},
 		[]string{"/Users/amu/Desktop/common.scss:/app/common.scss:rw"},
 		[]string{},
+		[]string{"redis-server", "--requirepass", "coreblox123"},
 		map[string]string{CreatedByProbe: "true", ServerTypeLabel: WebServer},
 	)
 	if err != nil {

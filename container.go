@@ -131,13 +131,14 @@ func (m *Manager) HasSameNameContainer(ctx context.Context, containerName string
 	return false, nil
 }
 
-func (m *Manager) CreateContainer(ctx context.Context, containerName, imageName, networkName string, ports []string, vols []string, envs []string, labels map[string]string) (string, error) {
+func (m *Manager) CreateContainer(ctx context.Context, containerName, imageName, networkName string, ports []string, vols []string, envs []string, commands []string, labels map[string]string) (string, error) {
 	config := &container.Config{}
 	config.Hostname = containerName
 	config.Image = imageName
 	config.Labels = labels
 	config.Tty = true
 	config.Env = envs
+	config.Cmd = commands
 
 	hostConfig := &container.HostConfig{}
 	hostConfig.RestartPolicy = container.RestartPolicy{Name: "always"}
