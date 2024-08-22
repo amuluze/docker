@@ -7,8 +7,9 @@ package docker
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types/network"
 	"strconv"
+
+	"github.com/docker/docker/api/types/network"
 
 	"io"
 	"os"
@@ -138,7 +139,9 @@ func (m *Manager) CreateContainer(ctx context.Context, containerName, imageName,
 	config.Labels = labels
 	config.Tty = true
 	config.Env = envs
-	config.Cmd = commands
+	if commands != nil {
+		config.Cmd = commands
+	}
 
 	hostConfig := &container.HostConfig{}
 	hostConfig.RestartPolicy = container.RestartPolicy{Name: "always"}
